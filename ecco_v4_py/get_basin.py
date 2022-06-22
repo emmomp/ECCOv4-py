@@ -11,15 +11,20 @@ import xarray as xr
 import datetime
 import dateutil
 import xgcm
+import pathlib
+from pathlib import Path
 
 from .read_bin_llc import read_llc_to_tiles
 
 # Store the package directory for loading the basins binary
 package_directory = os.path.dirname(os.path.abspath(__file__))
 
-def get_basin_mask(basin_name, mask, basin_path='../binary_data'):
+def get_basin_mask(basin_name, mask,
+                   basin_path = os.path.join(package_directory, '..' ,'binary_data'),
+                   less_output=False):
     """Return mask for ocean basin.
     Note: This mirrors gcmfaces/ecco_v4/v4_basin.m
+    And this only works for the global LLC90 domain
 
     Parameters
     ----------
@@ -37,11 +42,11 @@ def get_basin_mask(basin_name, mask, basin_path='../binary_data'):
 
     basin_path : string, default : '../binary_data'
         name of the directory that contains 'basins.data' and 'basins.meta'
-        
+
         If you don't have basins.data or basins.meta in your 'binary_data' directory
         you can download them from:
             https://github.com/ECCO-GROUP/ECCOv4-py/tree/master/binary_data
-        or 
+        or
             https://figshare.com/articles/Binary_files_for_the_ecco-v4-py_Python_package_/9932162
 
     Returns
@@ -50,6 +55,11 @@ def get_basin_mask(basin_name, mask, basin_path='../binary_data'):
         mask with values at cell centers, 1's for denoted ocean basin
         dimensions are the same as input field
     """
+
+
+
+    if 'tile' not in mask.dims or len(mask.tile)!=13 or mask.shape[-1]!=90 or mask.shape[-2]!=90:
+        raise NotImplementedError("Basin masks only available for global LLC90 domain")
 
     if type(basin_name) is not list:
         basin_name = [basin_name]
@@ -60,22 +70,26 @@ def get_basin_mask(basin_name, mask, basin_path='../binary_data'):
     # Get available names
     available_names = get_available_basin_names()
 
+    # resolve the basin path
+    basin_path = Path(basin_path).resolve()
+
+    if not less_output:
+        print('get_basin_name: ', basin_name, str(basin_path))
 
     # Read binary with the masks, from gcmfaces package
-    bin_dir = os.path.join(package_directory, basin_path)
-   
-    if os.path.exists(bin_dir + '/basins.data'):
-        all_basins = read_llc_to_tiles(bin_dir,'basins.data')
+    if (basin_path / 'basins.data').is_file(): 
+        all_basins = read_llc_to_tiles(basin_path,'basins.data')
+        print('shape after reading ')
+        print(all_basins.shape)
     else:
-        print ('Cannot find basins.data in ' + bin_dir + '\n')
-        print ('You can download basins.data and basins.meta here:')
-        print ('   https://github.com/ECCO-GROUP/ECCOv4-py/tree/master/binary_data')
-        print (' or ')
-        print ('   https://figshare.com/articles/Binary_files_for_the_ecco-v4-py_Python_package_/9932162')
-        print ('\n')               
-        print ('Download these files and specify their path when calling this subroutine')
-        return []
-
+        log = 'Cannot find basins.data in ' + str(basin_path) + '\n'+\
+        'You can download basins.data and basins.meta here:\n'+\
+        '   https://github.com/ECCO-GROUP/ECCOv4-py/tree/master/binary_data\n'+\
+        ' or \n'+\
+        '   https://figshare.com/articles/Binary_files_for_the_ecco-v4-py_Python_package_/9932162\n'+\
+        '\n'+\
+        'Download these files and specify their path when calling this subroutine\n'
+        raise OSError(log)
 
     # Handle vertical coordinate
     # If input mask is 3D in space, first get mask on top level
@@ -91,6 +105,7 @@ def get_basin_mask(basin_name, mask, basin_path='../binary_data'):
         mask_2d = mask
 
     basin_mask = 0*mask_2d
+    basin_mask.name = 'basin_mask'
 
     for name in basin_name:
         if name in available_names:
@@ -101,9 +116,9 @@ def get_basin_mask(basin_name, mask, basin_path='../binary_data'):
 
     # Now multiply by original mask to get vertical coordinate back
     # (xarray multiplication implies union of dimensions)
-    basin_mask = basin_mask * mask
-
-    return basin_mask
+    # yet mask needs to be first for the resulting 3D mask to have depth as the first array index
+    basin_mask_3D = mask * basin_mask 
+    return basin_mask_3D
 
 def get_available_basin_names():
     """Return available basins to get a mask for

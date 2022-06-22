@@ -3,18 +3,30 @@ name: test_env_ecco
 channels:
   - conda-forge
 dependencies:
-  - python=3.7
-  - xarray
-  - dask
-  - numpy
-  - scipy
-  - pytest
-  - future
-  - xmitgcm
-  - xgcm
-  - pytest 
+  - aiohttp
   - codecov
-  - pytest-cov
-  - pyresample
-  - cartopy
+  - cartopy>=0.18.0
+  - cmocean
+  - dask
   - docrep
+  - fsspec
+  - future
+  - geos
+  - matplotlib
+  - netcdf4
+  - numba
+  - numpy
+  - pathlib
+  - pip
+  - pre-commit
+  - proj
+  - pytest
+  - python=3.7
+  - pytest-cov
+  - pytest-xdist
+  - pyresample
+  - scipy
+  - xarray
+  - xgcm=0.5.0
+  - xmitgcm>=0.5.1
+  - typing_extensions

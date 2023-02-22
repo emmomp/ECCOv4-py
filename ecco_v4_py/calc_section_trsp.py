@@ -291,11 +291,11 @@ def section_trsp_at_depth(xfld, yfld, maskW, maskS,
     
     if sign is not None:
         if sign == 'positive':
-                maskW=maskW*(maskW*xfld>0)
-                maskS=maskS*(maskS*yfld>0)
+                maskW=maskW*((maskW*xfld)>0)
+                maskS=maskS*((maskS*yfld)>0)
         elif sign == 'negative':
-                maskW=maskW*(maskW*xfld<0)
-                maskS=maskS*(maskS*yfld<0)
+                maskW=maskW*((maskW*xfld)<0)
+                maskS=maskS*((maskS*yfld)<0)
 
     sec_trsp_x = (xfld * maskW).sum(dim=['i_g','j','tile'])
     sec_trsp_y = (yfld * maskS).sum(dim=['i','j_g','tile'])
@@ -353,21 +353,26 @@ def calc_section_fw_trsp(ds,Sref=35,
     ds['DFyE_FW'] = -ds.DFyE_SLT/Sref
     
     # Define fw transport
-    x_salt = ds['ADVx_FW'] + ds['DFxE_FW']
-    y_salt = ds['ADVy_FW'] + ds['DFyE_FW']
+    #x_salt = ds['ADVx_FW'] + ds['DFxE_FW']
+    #y_salt = ds['ADVy_FW'] + ds['DFyE_FW']
 
     # Computes fw transport in m^3/s at each depth level
-    ds_out = section_trsp_at_depth(x_salt,y_salt,maskW,maskS,
+    ds_out_adv = section_trsp_at_depth(ds['ADVx_FW'],ds['ADVy_FW'],maskW,maskS,
+                                   coords=coords,sign=sign)
+    ds_out_dif = section_trsp_at_depth(ds['DFxE_FW'],ds['DFyE_FW'],maskW,maskS,
                                    coords=coords,sign=sign)
 
     # Rename to useful data array name
-    ds_out = ds_out.rename({'trsp_z': 'fw_trsp_z'})
-
+    ds_out_adv = ds_out_adv.rename({'trsp_z': 'fw_trsp_adv_z'})
+    ds_out_dif = ds_out_dif.rename({'trsp_z': 'fw_trsp_dif_z'})
+    
     # Sum over depth for total transport
-    ds_out['fw_trsp'] = ds_out['fw_trsp_z'].sum('k')
+    ds_out_adv['fw_trsp_adv'] = ds_out_adv['fw_trsp_adv_z'].sum('k')
+    ds_out_dif['fw_trsp_dif'] = ds_out_dif['fw_trsp_dif_z'].sum('k')
+    ds_out=xr.merge([ds_out_adv,ds_out_dif])
 
     # Convert both fields to Sv
-    for fld in ['fw_trsp','fw_trsp_z']:
+    for fld in ['fw_trsp_adv','fw_trsp_adv_z','fw_trsp_dif','fw_trsp_dif_z']:
         ds_out[fld] = METERS_CUBED_TO_SVERDRUPS * ds_out[fld]
         ds_out[fld].attrs['units'] = 'Sv'
 

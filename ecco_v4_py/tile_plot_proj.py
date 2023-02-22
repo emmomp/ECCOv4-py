@@ -27,6 +27,7 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                              mapping_method='nearest_neighbor',
                              radius_of_influence = 112000,
                              plot_type = 'pcolormesh',
+                             circle_boundary = False,
                              cmap = None,
                              cmin = None, 
                              cmax = None,
@@ -103,6 +104,9 @@ def plot_proj_to_latlon_grid(lons, lats, data,
             'pcolormesh' - pcolormesh
             'contourf' - filled contour
             'points' - plot points at lat/lon locations
+
+    circle_boundary : logical, optional, default False
+        use a circle boundary or not 
     
     cmap : matplotlib.colors.Colormap, optional, default None
         a colormap for the figure.  
@@ -232,6 +236,7 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                          lat_lim,
                          cmin, cmax, ax,
                          plot_type = plot_type,
+                         circle_boundary = circle_boundary,
                          cmap = cmap,
                          show_coastline = show_coastline,
                          show_colorbar = show_colorbar,
@@ -244,8 +249,11 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                          grid_linestyle = grid_linestyle,
                          colorbar_label = colorbar_label,
                          less_output=less_output)
-    
-           
+
+        new_grid_lon_centers_out = new_grid_lon_centers
+        new_grid_lat_centers_out = new_grid_lat_centers
+        data_latlon_projection_out = data_latlon_projection
+
     else: # not polar stereographic projection
     
         # To avoid plotting problems around the date line, lon=180E, -180W
@@ -314,6 +322,7 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                               data_epsg_code,
                               cmin, cmax, ax,
                               plot_type = plot_type,
+                              circle_boundary = circle_boundary,
                               cmap = cmap,
                               show_coastline = show_coastline,
                               show_colorbar = show_colorbar,

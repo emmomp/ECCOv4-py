@@ -28,8 +28,9 @@ HEAT_CAPACITY = 4000
 def calc_section_vol_trsp(ds,
                           pt1=None, pt2=None,
                           section_name=None,
-                          maskW=None, maskS=None,
-                          coords=None, grid=None, sign=None):
+                          maskW=None, maskS=None, maskC=None,
+                          coords=None, grid=None, sign=None,
+                          along_section=False):
     """Compute volumetric transport across section in Sverdrups
     There are 3 ways to call this function:
 
@@ -93,7 +94,7 @@ def calc_section_vol_trsp(ds,
 
     coords = _parse_coords(ds,coords,['Z','YC','XC','drF','dyG','dxG'])
 
-    maskW, maskS = _parse_section_trsp_inputs(coords,pt1,pt2,maskW,maskS,section_name,
+    maskC, maskW, maskS = _parse_section_trsp_inputs(coords,pt1,pt2,maskC,maskW,maskS,section_name,
                                               grid=grid)
 
     # Define volumetric transport
@@ -101,7 +102,10 @@ def calc_section_vol_trsp(ds,
     y_vol = ds['VVELMASS'] * coords['drF'] * coords['dxG']
 
     # Computes salt transport in m^3/s at each depth level
-    ds_out = section_trsp_at_depth(x_vol,y_vol,maskW,maskS,
+    if along_section==True:
+        ds_out = section_trsp_across(x_vol,y_vol,maskC,grid,coords)
+    else:
+        ds_out = section_trsp_at_depth(x_vol,y_vol,maskW,maskS,
                                    coords=coords,sign=sign)
 
     # Rename to useful data array name
@@ -116,8 +120,9 @@ def calc_section_vol_trsp(ds,
         ds_out[fld].attrs['units'] = 'Sv'
 
     # Add section name and masks to Dataset
-    ds_out['maskW'] = maskW
-    ds_out['maskS'] = maskS
+    if not along_section:
+        ds_out['maskW'] = maskW
+        ds_out['maskS'] = maskS
     if section_name is not None:
         ds_out.attrs['name'] = section_name
 
@@ -126,8 +131,9 @@ def calc_section_vol_trsp(ds,
 def calc_section_heat_trsp(ds,
                            pt1=None, pt2=None,
                            section_name=None,
-                           maskW=None, maskS=None,
-                           coords=None,grid=None, sign=None):
+                           maskW=None, maskS=None, maskC=None,
+                           coords=None,grid=None, sign=None,
+                           along_section=False):
     """Compute heat transport across section in PW
     Inputs and usage are same as calc_section_vol_trsp.
     The only differences are:
@@ -156,7 +162,7 @@ def calc_section_heat_trsp(ds,
 
     coords = _parse_coords(ds,coords,['Z','YC','XC'])
 
-    maskW, maskS = _parse_section_trsp_inputs(coords,pt1,pt2,maskW,maskS,section_name,
+    maskC, maskW, maskS = _parse_section_trsp_inputs(coords,pt1,pt2,maskC,maskW,maskS,section_name,
                                               grid=grid)
 
     # Define heat transport
@@ -164,7 +170,10 @@ def calc_section_heat_trsp(ds,
     y_heat = ds['ADVy_TH'] + ds['DFyE_TH']
 
     # Computes salt transport in degC * m^3/s at each depth level
-    ds_out = section_trsp_at_depth(x_heat,y_heat,maskW,maskS,
+    if along_section==True:
+        ds_out = section_trsp_across(x_heat,y_heat,maskC,grid,coords)
+    else:
+        ds_out = section_trsp_at_depth(x_heat,y_heat,maskW,maskS,
                                    coords=coords,sign=sign)
 
     # Rename to useful data array name
@@ -179,8 +188,9 @@ def calc_section_heat_trsp(ds,
         ds_out[fld].attrs['units'] = 'PW'
 
     # Add section name and masks to Dataset
-    ds_out['maskW'] = maskW
-    ds_out['maskS'] = maskS
+    if not along_section:
+        ds_out['maskW'] = maskW
+        ds_out['maskS'] = maskS
     if section_name is not None:
         ds_out.attrs['name'] = section_name
 
@@ -189,8 +199,9 @@ def calc_section_heat_trsp(ds,
 def calc_section_salt_trsp(ds,
                            pt1=None, pt2=None,
                            section_name=None,
-                           maskW=None, maskS=None,
-                           coords=None, grid=None, sign=None):
+                           maskW=None, maskS=None, maskC=None,
+                           coords=None, grid=None, sign=None,
+                           along_section=False):
     """Compute salt transport across section in psu*Sv
     Inputs and usage are same as calc_section_vol_trsp.
     The only differences are:
@@ -219,7 +230,7 @@ def calc_section_salt_trsp(ds,
 
     coords = _parse_coords(ds,coords,['Z','YC','XC'])
 
-    maskW, maskS = _parse_section_trsp_inputs(coords,pt1,pt2,maskW,maskS,section_name,
+    maskC, maskW, maskS = _parse_section_trsp_inputs(coords,pt1,pt2,maskC,maskW,maskS,section_name,
                                               grid=grid)
 
     # Define salt transport
@@ -227,7 +238,10 @@ def calc_section_salt_trsp(ds,
     y_salt = ds['ADVy_SLT'] + ds['DFyE_SLT'] 
 
     # Computes salt transport in psu * m^3/s at each depth level
-    ds_out = section_trsp_at_depth(x_salt,y_salt,maskW,maskS,
+    if along_section==True:
+        ds_out = section_trsp_across(x_salt,y_salt,maskC,grid,coords)
+    else:
+        ds_out = section_trsp_at_depth(x_salt,y_salt,maskW,maskS,
                                    coords=coords,sign=sign)
 
     # Rename to useful data array name
@@ -242,8 +256,94 @@ def calc_section_salt_trsp(ds,
         ds_out[fld].attrs['units'] = 'psu.Sv'
 
     # Add section name and masks to Dataset
-    ds_out['maskW'] = maskW
-    ds_out['maskS'] = maskS
+    if not along_section:
+        ds_out['maskW'] = maskW
+        ds_out['maskS'] = maskS
+    if section_name is not None:
+        ds_out.attrs['name'] = section_name
+
+    return ds_out
+
+def calc_section_fw_trsp(ds,Sref=35,
+                           pt1=None, pt2=None,
+                           section_name=None,
+                           maskW=None, maskS=None, maskC=None,
+                           coords=None, grid=None, 
+                         sign=None,along_section=False ):
+    """Compute freshwater transport across section in Sv
+    Inputs and usage are same as calc_section_vol_trsp.
+    The only differences are:
+    Parameters
+    ----------
+    ds : xarray Dataset
+        must contain SALT, GM_PsiX, GM_PsiY, UVELMASS, VVELMASS, DFxe_SLT, DFyE_SLT
+    sref: scalar number
+        reference salinity for freshwater calculation in psu, default 35 psu
+    coords : xarray Dataset, optional
+        must contain XC, YC, Z, dxG, dyG, drF, optionally maskW, maskS
+    Returns
+    -------
+    fw_trsp_ds : xarray Dataset
+        includes variables as xarray DataArrays
+            fw_trsp
+                fw transport across section in Sv
+                with dimensions 'time' (if in given dataset) 
+            fw_trsp_z
+                salt transport across section at each depth level in Sv
+                with dimensions 'time' (if in given dataset), and 'k'
+            maskW, maskS
+                defining the section
+        and the section_name as an attribute if it is provided
+    """
+
+    coords = _parse_coords(ds,coords,['Z','YC','XC','dyG','dxG','drF'])
+
+    maskC, maskW, maskS = _parse_section_trsp_inputs(coords,pt1,pt2,maskC,maskW,maskS,section_name,
+                                              grid=grid)
+
+    # Define advective and diffusive transports 
+    SALT_at_u = grid.interp(ds.SALT, 'X', boundary='extend')
+    SALT_at_v = grid.interp(ds.SALT, 'Y', boundary='extend')
+    UVELSTAR = grid.diff(ds.GM_PsiX, 'Z', boundary='fill')/coords.drF
+    VVELSTAR = grid.diff(ds.GM_PsiY, 'Z', boundary='fill')/coords.drF
+    ds['ADVx_FW'] = (ds.UVELMASS+UVELSTAR)*coords.dyG*coords.drF*(Sref-SALT_at_u)/Sref
+    ds['ADVy_FW'] = (ds.VVELMASS+VVELSTAR)*coords.dxG*coords.drF*(Sref-SALT_at_v)/Sref
+    # Assuming diffusive transports are functions of grad(quantity), using grad(fw)=-grad(SALT)/Sref
+    ds['DFxE_FW'] = -ds.DFxE_SLT/Sref
+    ds['DFyE_FW'] = -ds.DFyE_SLT/Sref
+    
+    # Define fw transport
+    #x_salt = ds['ADVx_FW'] + ds['DFxE_FW']
+    #y_salt = ds['ADVy_FW'] + ds['DFyE_FW']
+
+    # Computes fw transport in m^3/s at each depth level
+    if along_section==True:
+        ds_out_adv = section_trsp_across(ds['ADVx_FW'],ds['ADVy_FW'],maskC,grid,coords)
+        ds_out_dif = section_trsp_across(ds['DFxE_FW'],ds['DFyE_FW'],maskC,grid,coords)
+    else:
+        ds_out_adv = section_trsp_at_depth(ds['ADVx_FW'],ds['ADVy_FW'],maskW,maskS,
+                                       coords=coords,sign=sign)
+        ds_out_dif = section_trsp_at_depth(ds['DFxE_FW'],ds['DFyE_FW'],maskW,maskS,
+                                       coords=coords,sign=sign)
+
+    # Rename to useful data array name
+    ds_out_adv = ds_out_adv.rename({'trsp_z': 'fw_trsp_adv_z'})
+    ds_out_dif = ds_out_dif.rename({'trsp_z': 'fw_trsp_dif_z'})
+    
+    # Sum over depth for total transport
+    ds_out_adv['fw_trsp_adv'] = ds_out_adv['fw_trsp_adv_z'].sum('k')
+    ds_out_dif['fw_trsp_dif'] = ds_out_dif['fw_trsp_dif_z'].sum('k')
+    ds_out=xr.merge([ds_out_adv,ds_out_dif])
+
+    # Convert both fields to Sv
+    for fld in ['fw_trsp_adv','fw_trsp_adv_z','fw_trsp_dif','fw_trsp_dif_z']:
+        ds_out[fld] = METERS_CUBED_TO_SVERDRUPS * ds_out[fld]
+        ds_out[fld].attrs['units'] = 'Sv'
+
+    # Add section name and masks to Dataset
+    if not along_section:
+        ds_out['maskW'] = maskW
+        ds_out['maskS'] = maskS
     if section_name is not None:
         ds_out.attrs['name'] = section_name
 
@@ -304,85 +404,51 @@ def section_trsp_at_depth(xfld, yfld, maskW, maskS,
 
     return ds_out
 
-def calc_section_fw_trsp(ds,Sref=35,
-                           pt1=None, pt2=None,
-                           section_name=None,
-                           maskW=None, maskS=None,
-                           coords=None, grid=None, 
-                         sign=None ):
-    """Compute freshwater transport across section in Sv
-    Inputs and usage are same as calc_section_vol_trsp.
-    The only differences are:
+def section_trsp_across(xfld, yfld, maskC,grid,
+                          coords=None):
+    """
+    Compute transport of vector quantity at each depth level
+    across latitude(s) defined in lat_vals
+
     Parameters
     ----------
-    ds : xarray Dataset
-        must contain SALT, GM_PsiX, GM_PsiY, UVELMASS, VVELMASS, DFxe_SLT, DFyE_SLT
-    sref: scalar number
-        reference salinity for freshwater calculation in psu, default 35 psu
+    xfld, yfld : xarray DataArray
+        3D spatial (+ time, optional) field at west and south grid cell edge
+    maskW, maskS : xarray DataArray
+        defines the section to define transport across
     coords : xarray Dataset, optional
-        must contain XC, YC, Z, dxG, dyG, drF, optionally maskW, maskS
+        include if providing maskW/S (i.e. wet point masks in addition to line masks)
+
     Returns
     -------
-    fw_trsp_ds : xarray Dataset
-        includes variables as xarray DataArrays
-            fw_trsp
-                fw transport across section in Sv
-                with dimensions 'time' (if in given dataset) 
-            fw_trsp_z
-                salt transport across section at each depth level in Sv
-                with dimensions 'time' (if in given dataset), and 'k'
-            maskW, maskS
-                defining the section
-        and the section_name as an attribute if it is provided
+    ds_out : xarray Dataset
+        with the main variable
+            'trsp_z'
+                transport of vector quantity across denoted section at
+                each depth level with dimensions 'time' (if in given dataset),
+                and 'k' (depth)
     """
 
-    coords = _parse_coords(ds,coords,['Z','YC','XC','dyG','dxG','drF'])
+    # Initialize empty DataArray with coordinates and dims
+    coords = coords if coords is not None else xfld.to_dataset(name='xfld')
+    ds_out = _initialize_section_trsp_data_array(coords)
 
-    maskW, maskS = _parse_section_trsp_inputs(coords,pt1,pt2,maskW,maskS,section_name,
-                                              grid=grid)
+    # Apply section mask and sum horizontally
+    # if wet point mask in coords, use it
+    maskC = maskC.astype('bool')*coords.maskC if 'maskC' in coords else maskC
 
-    # Define advective and diffusive transports 
-    SALT_at_u = grid.interp(ds.SALT, 'X', boundary='extend')
-    SALT_at_v = grid.interp(ds.SALT, 'Y', boundary='extend')
-    UVELSTAR = grid.diff(ds.GM_PsiX, 'Z', boundary='fill')/coords.drF
-    VVELSTAR = grid.diff(ds.GM_PsiY, 'Z', boundary='fill')/coords.drF
-    ds['ADVx_FW'] = (ds.UVELMASS+UVELSTAR)*coords.dyG*coords.drF*(Sref-SALT_at_u)/Sref
-    ds['ADVy_FW'] = (ds.VVELMASS+VVELSTAR)*coords.dxG*coords.drF*(Sref-SALT_at_v)/Sref
-    # Assuming diffusive transports are functions of grad(quantity), using grad(fw)=-grad(SALT)/Sref
-    ds['DFxE_FW'] = -ds.DFxE_SLT/Sref
-    ds['DFyE_FW'] = -ds.DFyE_SLT/Sref
+    # interpolate to c grid
+    velc = grid.interp_2d_vector({'X': xfld, 'Y': yfld},boundary='fill')
+
+    # drop where not on C grid
+    sec_trsp_x = velc['X'].where(maskC,drop=True).stack({'ij':['i','j']}).dropna('ij',how='all').squeeze()
+    sec_trsp_y = velc['Y'].where(maskC,drop=True).stack({'ij':['i','j']}).dropna('ij',how='all').squeeze()
     
-    # Define fw transport
-    #x_salt = ds['ADVx_FW'] + ds['DFxE_FW']
-    #y_salt = ds['ADVy_FW'] + ds['DFyE_FW']
-
-    # Computes fw transport in m^3/s at each depth level
-    ds_out_adv = section_trsp_at_depth(ds['ADVx_FW'],ds['ADVy_FW'],maskW,maskS,
-                                   coords=coords,sign=sign)
-    ds_out_dif = section_trsp_at_depth(ds['DFxE_FW'],ds['DFyE_FW'],maskW,maskS,
-                                   coords=coords,sign=sign)
-
-    # Rename to useful data array name
-    ds_out_adv = ds_out_adv.rename({'trsp_z': 'fw_trsp_adv_z'})
-    ds_out_dif = ds_out_dif.rename({'trsp_z': 'fw_trsp_dif_z'})
-    
-    # Sum over depth for total transport
-    ds_out_adv['fw_trsp_adv'] = ds_out_adv['fw_trsp_adv_z'].sum('k')
-    ds_out_dif['fw_trsp_dif'] = ds_out_dif['fw_trsp_dif_z'].sum('k')
-    ds_out=xr.merge([ds_out_adv,ds_out_dif])
-
-    # Convert both fields to Sv
-    for fld in ['fw_trsp_adv','fw_trsp_adv_z','fw_trsp_dif','fw_trsp_dif_z']:
-        ds_out[fld] = METERS_CUBED_TO_SVERDRUPS * ds_out[fld]
-        ds_out[fld].attrs['units'] = 'Sv'
-
-    # Add section name and masks to Dataset
-    ds_out['maskW'] = maskW
-    ds_out['maskS'] = maskS
-    if section_name is not None:
-        ds_out.attrs['name'] = section_name
+    ds_out['trsp_z']= sec_trsp_x+sec_trsp_y
 
     return ds_out
+
+
 
 
 
@@ -394,7 +460,7 @@ def calc_section_fw_trsp(ds,Sref=35,
 # Helper functions for the computing volume, heat, and salt transport
 # -------------------------------------------------------------------------------
 
-def _parse_section_trsp_inputs(ds,pt1,pt2,maskW,maskS,section_name,grid=None):
+def _parse_section_trsp_inputs(ds,pt1,pt2,maskC,maskW,maskS,section_name,grid=None):
     """Handle inputs for computing volume, heat, or salt transport across
     a section
 
@@ -422,7 +488,7 @@ def _parse_section_trsp_inputs(ds,pt1,pt2,maskW,maskS,section_name,grid=None):
         use_endpoints = True
 
     # Test if masks provided
-    if (maskW is not None and maskS is not None):
+    if (maskW is not None and maskS is not None) or (maskC is not None):
         use_masks = True
 
     # Test to make sure section is defined by at least one method
@@ -439,9 +505,9 @@ def _parse_section_trsp_inputs(ds,pt1,pt2,maskW,maskS,section_name,grid=None):
         if use_endpoints and use_masks:
             raise TypeError('Cannot provide more than one method for defining section')
     if not use_masks:
-        _, maskW, maskS = get_section_line_masks(pt1, pt2, ds, grid=grid)
+        maskC, maskW, maskS = get_section_line_masks(pt1, pt2, ds, grid=grid)
 
-    return maskW, maskS
+    return maskC, maskW, maskS
 
 def _initialize_section_trsp_data_array(coords):
     """Create an xarray DataArray with time, depth, and latitude dims

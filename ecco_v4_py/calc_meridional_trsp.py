@@ -294,7 +294,7 @@ def _parse_coords(ds,coords,coordlist):
     if coords is not None:
         return coords
     else:
-        for f in set(['maskW','maskS']).intersection(ds.reset_coords().keys()):
+        for f in set(['maskC','maskW','maskS']).intersection(ds.reset_coords().keys()):
             coordlist.append(f)
 
         if 'time' in ds.dims:

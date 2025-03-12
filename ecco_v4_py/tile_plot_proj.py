@@ -45,6 +45,7 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                              grid_linewidth = 1,
                              grid_linestyle = '--',
                              colorbar_label = None,
+                             colorbar_location = None,
                              subplot_grid=None,
                              less_output=True,
                              ax=None,
@@ -247,6 +248,7 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                          grid_linewidth = grid_linewidth,
                          grid_linestyle = grid_linestyle,
                          colorbar_label = colorbar_label,
+                         colorbar_location = colorbar_location,
                          less_output=less_output)
 
         new_grid_lon_centers_out = new_grid_lon_centers
@@ -333,6 +335,7 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                               grid_linewidth = grid_linewidth,
                               grid_linestyle = grid_linestyle,
                               colorbar_label =colorbar_label,
+                              colorbar_location = colorbar_location,^M
                               less_output=less_output,
                               **kwargs)
     
@@ -362,6 +365,7 @@ def plot_pstereo(xx, yy, data,
                  data_zorder = 50,
                  points_color = 'k',
                  colorbar_label = None,
+                 colorbar_location = None,
                  less_output = True):
 
     # assign cmap default
@@ -428,7 +432,8 @@ def plot_pstereo(xx, yy, data,
                               show_land_over_data = show_land_over_data,
                               grid_linewidth = grid_linewidth,
                               grid_linestyle = grid_linestyle,
-                              colorbar_label = colorbar_label)
+                              colorbar_label = colorbar_label,
+                              colorbar_location = colorbar_location)
         
 
     return p, gl, cbar
@@ -452,6 +457,7 @@ def plot_global(xx,yy, data,
                 grid_linestyle = '--',
                 levels = 20,
                 colorbar_label=None,
+                colorbar_location=None,
                 data_zorder = 50,
                 points_color = 'k',
                 less_output=True,
@@ -504,7 +510,8 @@ def plot_global(xx,yy, data,
                               show_land_over_data = show_land_over_data,
                               grid_linewidth = grid_linewidth,
                               grid_linestyle = grid_linestyle,
-                              colorbar_label = colorbar_label)
+                              colorbar_label = colorbar_label,
+                              colorbar_location = colorbar_location)
 
     return p, gl, cbar
 
@@ -521,7 +528,8 @@ def _add_features_to_axis(ax, p, cmin, cmax,
                           show_land_over_data = True,
                           grid_linewidth = 1,
                           grid_linestyle = '--',
-                          colorbar_label = None):
+                          colorbar_label = None,
+                          colorbar_location = None):
                                      
     
     if show_land:
@@ -559,8 +567,11 @@ def _add_features_to_axis(ax, p, cmin, cmax,
     if show_colorbar:
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(cmin,cmax))
         sm._A = []
-        cbar = plt.colorbar(sm,ax=ax)
-        #cbar = plt.colorbar(p, ax=ax)
+        if colorbar_location:
+            cbar = plt.colorbar(sm,ax=ax, location=colorbar_location)
+        else:
+            cbar = plt.colorbar(sm,ax=ax)
+            #cbar = plt.colorbar(p, ax=ax)
         if type(colorbar_label) is str:
             cbar.set_label(colorbar_label)
         

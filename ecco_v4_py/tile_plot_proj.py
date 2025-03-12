@@ -47,6 +47,7 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                              colorbar_label = None,
                              subplot_grid=None,
                              less_output=True,
+                             ax=None,
                              **kwargs):
     
     """Plot a field of data from an arbitrary projection with lat/lon coordinates
@@ -174,9 +175,6 @@ def plot_proj_to_latlon_grid(lons, lats, data,
 
     """
 
-    if cmap == None:
-        cmap, (new_cmin,new_cmax) = assign_colormap(data, cmap)
-    
     if cmin == None:
         cmin = np.nanmin(data[:])
     if cmax == None:
@@ -189,11 +187,12 @@ def plot_proj_to_latlon_grid(lons, lats, data,
             user_lat_0 = -90
 
     # Make projection axis
-    ax  = _create_projection_axis(
+    if not ax:
+        ax  = _create_projection_axis(
             projection_type, user_lon_0, user_lat_0, parallels,
             lat_lim, subplot_grid, less_output)
     
-    ax.set_global()
+        ax.set_global()
 
     # lat-lon data is EPSG:4326
     # https://spatialreference.org/ref/epsg/wgs-84/
@@ -334,7 +333,8 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                               grid_linewidth = grid_linewidth,
                               grid_linestyle = grid_linestyle,
                               colorbar_label =colorbar_label,
-                              less_output=less_output)
+                              less_output=less_output,
+                              **kwargs)
     
 
     return f, ax, p, cbar, new_grid_lon_centers_out, new_grid_lat_centers_out,\
@@ -454,10 +454,12 @@ def plot_global(xx,yy, data,
                 colorbar_label=None,
                 data_zorder = 50,
                 points_color = 'k',
-                less_output=True):
+                less_output=True,
+                colors=None,
+                **kwargs):
 
     # assign cmap default
-    if cmap is None:
+    if (cmap is None) and (colors is None):
         cmap, (new_cmin,new_cmax) = assign_colormap(data, cmap)
 
     if data_epsg_code == 4326: # lat lon does nneed to be projected
@@ -470,16 +472,19 @@ def plot_global(xx,yy, data,
     if plot_type == 'pcolormesh':
         p = ax.pcolormesh(xx, yy, data, transform=data_crs, \
                           vmin=cmin, vmax=cmax, cmap=cmap,
-                          zorder=data_zorder)
+                          zorder=data_zorder,**kwargs)
 
     elif plot_type =='contourf':
         p = ax.contourf(xx, yy, data, levels, transform=data_crs,  \
-                        vmin=cmin, vmax=cmax, cmap=cmap,
-                        zorder=data_zorder)
-
+                        vmin=cmin, vmax=cmax, cmap=cmap, colors=colors,
+                        zorder=data_zorder,**kwargs)
+    elif plot_type =='contour':
+        p = ax.contour(xx, yy, data, levels, transform=data_crs,  \
+                        vmin=cmin, vmax=cmax, cmap=cmap,colors=colors,
+                        zorder=data_zorder,**kwargs)
     elif plot_type == 'points':
         p = ax.plot(xx, yy,  color=points_color, marker='.', transform=data_crs,
-                    zorder=data_zorder)
+                    zorder=data_zorder,**kwargs)
 
     else:
         raise ValueError('plot_type  must be either "pcolormesh", "contourf", or "points"')

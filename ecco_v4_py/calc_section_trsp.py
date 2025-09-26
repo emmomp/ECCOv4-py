@@ -309,8 +309,8 @@ def calc_section_fw_trsp(ds,Sref=35,
     ds['ADVx_FW'] = (ds.UVELMASS+UVELSTAR)*coords.dyG*coords.drF*(Sref-SALT_at_u)/Sref
     ds['ADVy_FW'] = (ds.VVELMASS+VVELSTAR)*coords.dxG*coords.drF*(Sref-SALT_at_v)/Sref
     # Assuming diffusive transports are functions of grad(quantity), using grad(fw)=-grad(SALT)/Sref
-    ds['DFxE_FW'] = -ds.DFxE_SLT/Sref
-    ds['DFyE_FW'] = -ds.DFyE_SLT/Sref
+    #ds['DFxE_FW'] = -ds.DFxE_SLT/Sref
+    #ds['DFyE_FW'] = -ds.DFyE_SLT/Sref
     
     # Define fw transport
     #x_salt = ds['ADVx_FW'] + ds['DFxE_FW']
@@ -319,24 +319,27 @@ def calc_section_fw_trsp(ds,Sref=35,
     # Computes fw transport in m^3/s at each depth level
     if along_section==True:
         ds_out_adv = section_trsp_across(ds['ADVx_FW'],ds['ADVy_FW'],maskC,grid,coords)
-        ds_out_dif = section_trsp_across(ds['DFxE_FW'],ds['DFyE_FW'],maskC,grid,coords)
+     #   ds_out_dif = section_trsp_across(ds['DFxE_FW'],ds['DFyE_FW'],maskC,grid,coords)
     else:
         ds_out_adv = section_trsp_at_depth(ds['ADVx_FW'],ds['ADVy_FW'],maskW,maskS,
                                        coords=coords,sign=sign)
-        ds_out_dif = section_trsp_at_depth(ds['DFxE_FW'],ds['DFyE_FW'],maskW,maskS,
-                                       coords=coords,sign=sign)
+    #    ds_out_dif = section_trsp_at_depth(ds['DFxE_FW'],ds['DFyE_FW'],maskW,maskS,
+    #                                   coords=coords,sign=sign)
 
     # Rename to useful data array name
     ds_out_adv = ds_out_adv.rename({'trsp_z': 'fw_trsp_adv_z'})
-    ds_out_dif = ds_out_dif.rename({'trsp_z': 'fw_trsp_dif_z'})
+   # ds_out_dif = ds_out_dif.rename({'trsp_z': 'fw_trsp_dif_z'})
     
     # Sum over depth for total transport
     ds_out_adv['fw_trsp_adv'] = ds_out_adv['fw_trsp_adv_z'].sum('k')
-    ds_out_dif['fw_trsp_dif'] = ds_out_dif['fw_trsp_dif_z'].sum('k')
-    ds_out=xr.merge([ds_out_adv,ds_out_dif])
+    ds_out=ds_out_adv
+  #  ds_out_dif['fw_trsp_dif'] = ds_out_dif['fw_trsp_dif_z'].sum('k')
+  #  ds_out=xr.merge([ds_out_adv,ds_out_dif])
 
     # Convert both fields to Sv
-    for fld in ['fw_trsp_adv','fw_trsp_adv_z','fw_trsp_dif','fw_trsp_dif_z']:
+    for fld in ['fw_trsp_adv','fw_trsp_adv_z',
+              #  'fw_trsp_dif','fw_trsp_dif_z'
+               ]:
         ds_out[fld] = METERS_CUBED_TO_SVERDRUPS * ds_out[fld]
         ds_out[fld].attrs['units'] = 'Sv'
 

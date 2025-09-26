@@ -56,11 +56,12 @@ def test_section_trsp(get_test_ds,myfunc,tfld,xflds,yflds,factor,args,mask,error
     else:
         myargs['maskW']=None
         myargs['maskS']=None
+    myargs['maskC']=None
 
     if error is None:
         trsp = myfunc(ds,grid=grid,**myargs)
 
-        maskW,maskS = ecco_v4_py.calc_section_trsp._parse_section_trsp_inputs(ds,
+        _,maskW,maskS = ecco_v4_py.calc_section_trsp._parse_section_trsp_inputs(ds,
                         grid=grid,**myargs)
 
         expx = (ds['drF']*ds['dyG']).copy() if tfld == 'vol_trsp_z' else 2.*xr.ones_like(ds['hFacW'])

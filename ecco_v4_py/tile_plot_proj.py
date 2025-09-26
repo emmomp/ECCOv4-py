@@ -249,7 +249,8 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                          grid_linestyle = grid_linestyle,
                          colorbar_label = colorbar_label,
                          colorbar_location = colorbar_location,
-                         less_output=less_output)
+                         less_output=less_output,
+                         **kwargs)
 
         new_grid_lon_centers_out = new_grid_lon_centers
         new_grid_lat_centers_out = new_grid_lat_centers
@@ -335,7 +336,7 @@ def plot_proj_to_latlon_grid(lons, lats, data,
                               grid_linewidth = grid_linewidth,
                               grid_linestyle = grid_linestyle,
                               colorbar_label =colorbar_label,
-                              colorbar_location = colorbar_location,^M
+                              colorbar_location = colorbar_location,
                               less_output=less_output,
                               **kwargs)
     
@@ -366,10 +367,12 @@ def plot_pstereo(xx, yy, data,
                  points_color = 'k',
                  colorbar_label = None,
                  colorbar_location = None,
-                 less_output = True):
+                 less_output = True,
+                 colors=None,
+                 **kwargs):
 
     # assign cmap default
-    if cmap is None:
+    if cmap is None and (colors is None):
         cmap, (new_cmin,new_cmax) = assign_colormap(data, cmap)
 
     if isinstance(ax.projection, ccrs.NorthPolarStereo):
@@ -406,15 +409,21 @@ def plot_pstereo(xx, yy, data,
     p=[]
     if plot_type == 'pcolormesh':
         p = ax.pcolormesh(xx, yy, data, transform=data_crs,
-                          vmin=cmin, vmax=cmax, cmap=cmap, zorder=data_zorder)
+                          vmin=cmin, vmax=cmax, cmap=cmap, zorder=data_zorder,**kwargs)
 
     elif plot_type =='contourf':
         p = ax.contourf(xx, yy, data, levels, transform=data_crs,
-                        vmin=cmin, vmax=cmax, cmap=cmap, zorder=data_zorder)
+                        vmin=cmin, vmax=cmax, cmap=cmap, colors=colors,
+                        zorder=data_zorder,**kwargs)
+        
+    elif plot_type =='contour':
+        p = ax.contour(xx, yy, data, levels, transform=data_crs,
+                        vmin=cmin, vmax=cmax, cmap=cmap, colors=colors,
+                       zorder=data_zorder,**kwargs)
 
     elif plot_type == 'points':
         p = ax.plot(xx, yy,  color=points_color, marker='.', transform=data_crs,
-                    zorder=data_zorder)
+                    zorder=data_zorder,**kwargs)
 
     else:
         raise ValueError('plot_type  must be either "pcolormesh", "contourf", or "points"')

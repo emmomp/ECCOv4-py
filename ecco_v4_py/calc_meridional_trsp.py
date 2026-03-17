@@ -22,7 +22,7 @@ RHO_CONST = 1029
 HEAT_CAPACITY = 4000
 
 def calc_meridional_vol_trsp(ds,lat_vals,
-                             basin_name=None,coords=None,grid=None):
+                             basin_name=None,coords=None,grid=None,**kwargs):
     """Compute volumetric transport across latitude band in Sverdrups
 
     Parameters
@@ -66,7 +66,7 @@ def calc_meridional_vol_trsp(ds,lat_vals,
                                       coords=coords,
                                       lat_vals=lat_vals,
                                       basin_name=basin_name,
-                                      grid=grid)
+                                      grid=grid,**kwargs)
 
     # Rename to useful data array name
     ds_out = ds_out.rename({'trsp_z': 'vol_trsp_z'})
@@ -82,7 +82,7 @@ def calc_meridional_vol_trsp(ds,lat_vals,
     return ds_out
 
 def calc_meridional_tracer_trsp(ds,lat_vals,itracer,
-                              basin_name=None,coords=None,grid=None):
+                              basin_name=None,coords=None,grid=None,**kwargs):
     """Compute tracer advective transport across latitude band 
     see calc_meridional_vol_trsp for argument documentation.
     The only differences are:
@@ -118,7 +118,7 @@ def calc_meridional_tracer_trsp(ds,lat_vals,itracer,
                                       coords=coords,
                                       lat_vals=lat_vals,
                                       basin_name=basin_name,
-                                      grid=grid)
+                                      grid=grid,**kwargs)
 
     # Rename to useful data array name
     ds_out = ds_out.rename({'trsp_z': 'trac_trsp_z'})
@@ -135,7 +135,7 @@ def calc_meridional_tracer_trsp(ds,lat_vals,itracer,
 
 
 def calc_meridional_heat_trsp(ds,lat_vals,
-                              basin_name=None,coords=None,grid=None):
+                              basin_name=None,coords=None,grid=None,**kwargs):
     """Compute heat transport across latitude band in Petwatts
     see calc_meridional_vol_trsp for argument documentation.
     The only differences are:
@@ -171,7 +171,7 @@ def calc_meridional_heat_trsp(ds,lat_vals,
                                       coords=coords,
                                       lat_vals=lat_vals,
                                       basin_name=basin_name,
-                                      grid=grid)
+                                      grid=grid,**kwargs)
 
     # Rename to useful data array name
     ds_out = ds_out.rename({'trsp_z': 'heat_trsp_z'})
@@ -187,7 +187,7 @@ def calc_meridional_heat_trsp(ds,lat_vals,
     return ds_out
 
 def calc_meridional_salt_trsp(ds,lat_vals,
-                              basin_name=None,coords=None,grid=None):
+                              basin_name=None,coords=None,grid=None,**kwargs):
     """Compute salt transport across latitude band in psu * Sv
     see calc_meridional_vol_trsp for argument documentation.
     The only differences are:
@@ -223,7 +223,7 @@ def calc_meridional_salt_trsp(ds,lat_vals,
                                       coords=coords,
                                       lat_vals=lat_vals,
                                       basin_name=basin_name,
-                                      grid=grid)
+                                      grid=grid,**kwargs)
 
     # Rename to useful data array name
     ds_out = ds_out.rename({'trsp_z': 'salt_trsp_z'})
@@ -241,7 +241,7 @@ def calc_meridional_salt_trsp(ds,lat_vals,
 # ---------------------------------------------------------------------
 
 def meridional_trsp_at_depth(xfld, yfld, lat_vals, coords,
-                             basin_name=None, grid=None, less_output=True):
+                             basin_name=None, grid=None, less_output=True, basin_path=None):
     """
     Compute transport of vector quantity at each depth level
     across latitude(s) defined in lat_vals
@@ -282,8 +282,13 @@ def meridional_trsp_at_depth(xfld, yfld, lat_vals, coords,
     maskW = coords['maskW'] if 'maskW' in coords else xr.ones_like(xfld)
     maskS = coords['maskS'] if 'maskS' in coords else xr.ones_like(yfld)
     if basin_name is not None:
-        maskW = get_basin_mask(basin_name,maskW)
-        maskS = get_basin_mask(basin_name,maskS)
+        if basin_path is None:
+            maskW = get_basin_mask(basin_name,maskW)
+            maskS = get_basin_mask(basin_name,maskS)
+        else:
+            maskW = get_basin_mask(basin_name,maskW,basin_path=basin_path)
+            maskS = get_basin_mask(basin_name,maskS,basin_path=basin_path)
+            
 
     # These sums are the same for all lats, therefore precompute to save
     # time

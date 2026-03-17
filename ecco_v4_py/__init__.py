@@ -1,6 +1,6 @@
 from .calc_meridional_trsp import calc_meridional_vol_trsp, \
         calc_meridional_heat_trsp, calc_meridional_salt_trsp, \
-        meridional_trsp_at_depth, calc_meridional_trac_trsp
+        meridional_trsp_at_depth, calc_meridional_tracer_trsp
 
 from .calc_section_trsp import calc_section_vol_trsp, \
         calc_section_heat_trsp, calc_section_salt_trsp, \

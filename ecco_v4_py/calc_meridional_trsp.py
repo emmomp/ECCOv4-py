@@ -81,6 +81,58 @@ def calc_meridional_vol_trsp(ds,lat_vals,
 
     return ds_out
 
+def calc_meridional_tracer_trsp(ds,lat_vals,itracer,
+                              basin_name=None,coords=None,grid=None):
+    """Compute tracer advective transport across latitude band 
+    see calc_meridional_vol_trsp for argument documentation.
+    The only differences are:
+
+    Parameters
+    ----------
+    ds : xarray Dataset
+        must contain fields 'ADVxTr[XX]','ADVyTr[XX]'
+    coords : xarray Dataset, optional
+        in case coordinates are in a separate dataset
+        only needs field 'YC' and optionally maskW, maskS
+
+    Returns
+    -------
+    ds_out : xarray Dataset
+        Dataset with the following variables
+            'trac_trsp' :
+                meridional tracer transport 
+                with dimensions 'time' (if in given dataset) and 'lat'
+            'trac_trsp_z' :
+                meridional tracer transport at each depth level
+                in the given input fields
+                dimensions: 'time' (if provided), 'lat', and 'k'
+    """
+
+    coords = _parse_coords(ds,coords,['Z','YC'])
+
+    x_trac = ds[f'ADVxTr{itracer:02.0f}'] 
+    y_trac = ds[f'ADVyTr{itracer:02.0f}'] 
+
+    # Computes heat transport in degC * m^3/s at each depth level
+    ds_out = meridional_trsp_at_depth(x_trac,y_trac,
+                                      coords=coords,
+                                      lat_vals=lat_vals,
+                                      basin_name=basin_name,
+                                      grid=grid)
+
+    # Rename to useful data array name
+    ds_out = ds_out.rename({'trsp_z': 'trac_trsp_z'})
+
+    # Sum over depth for total transport
+    ds_out['trac_trsp'] = ds_out['trac_trsp_z'].sum('k')
+
+    # Convert both fields to PW
+    for fld in ['trac_trsp','trac_trsp_z']:
+        ds_out[fld] = METERS_CUBED_TO_SVERDRUPS * ds_out[fld]
+        ds_out[fld].attrs['units'] = 'trac.Sv'
+
+    return ds_out
+
 
 def calc_meridional_heat_trsp(ds,lat_vals,
                               basin_name=None,coords=None,grid=None):

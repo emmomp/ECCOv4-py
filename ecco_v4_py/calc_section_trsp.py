@@ -196,6 +196,69 @@ def calc_section_heat_trsp(ds,
 
     return ds_out
 
+def calc_section_tracer_trsp(ds,tracer_index=1,
+                           pt1=None, pt2=None,
+                           section_name=None,
+                           maskW=None, maskS=None, maskC=None,
+                           coords=None,grid=None, sign=None,
+                           along_section=False):
+    """Compute tracer transport across section in PW
+    Inputs and usage are same as calc_section_vol_trsp.
+    The only differences are:
+
+    Parameters
+    ----------
+    ds : xarray Dataset
+        must contain ADVxTr[tracer_index], ADVyTr[tracer_index],
+    coords : xarray Dataset, optional
+        must contain XC, YC, Z, optionally maskW, maskS
+
+    Returns
+    -------
+    tracer_trsp_ds : xarray Dataset
+        includes variables as xarray DataArrays
+            tracer_trsp
+                tracer transport across section in PW
+                with dimensions 'time' (if in given dataset) and 'lat'
+            tracer_trsp_z
+                tracer transport across section at each depth level in PW
+                with dimensions 'time' (if in given dataset), 'lat', and 'k'
+            maskW, maskS
+                defining the section
+        and the section_name as an attribute if it is provided
+    """
+
+    coords = _parse_coords(ds,coords,['Z','YC','XC'])
+
+    maskC, maskW, maskS = _parse_section_trsp_inputs(coords,pt1,pt2,maskC,maskW,maskS,section_name,
+                                              grid=grid)
+
+    # Define tracer transport
+    x_tracer = ds[f'ADVxTr{tracer_index:02.0f}'] 
+    y_tracer = ds[f'ADVyTr{tracer_index:02.0f}']
+
+    # Computes tracer transport in tracer conc * m^3/s at each depth level
+    if along_section==True:
+        ds_out = section_trsp_across(x_tracer,y_tracer,maskC,grid,coords)
+    else:
+        ds_out = section_trsp_at_depth(x_tracer,y_tracer,maskW,maskS,
+                                   coords=coords,sign=sign)
+
+    # Rename to useful data array name
+    ds_out = ds_out.rename({'trsp_z': 'tracer_trsp_z'})
+
+    # Sum over depth for total transport
+    ds_out['tracer_trsp'] = ds_out['tracer_trsp_z'].sum('k')
+
+    # Add section name and masks to Dataset
+    if not along_section:
+        ds_out['maskW'] = maskW
+        ds_out['maskS'] = maskS
+    if section_name is not None:
+        ds_out.attrs['name'] = section_name
+
+    return ds_out
+
 def calc_section_salt_trsp(ds,
                            pt1=None, pt2=None,
                            section_name=None,

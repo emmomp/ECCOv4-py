@@ -240,7 +240,7 @@ def calc_meridional_salt_trsp(ds,lat_vals,
 
 # ---------------------------------------------------------------------
 
-def meridional_trsp_at_depth(xfld, yfld, lat_vals, coords,
+def meridional_trsp_at_depth(xfld, yfld, lat_vals, coords, lat_sum=True,
                              basin_name=None, grid=None, less_output=True, basin_path=None):
     """
     Compute transport of vector quantity at each depth level
@@ -300,11 +300,18 @@ def meridional_trsp_at_depth(xfld, yfld, lat_vals, coords,
             print ('calculating transport for latitutde ', lat)
 
         # Compute mask for particular latitude band
-        lat_maskW, lat_maskS = vector_calc.get_latitude_masks(lat, coords['YC'], grid)
 
-        # Sum horizontally
-        lat_trsp_x = (tmp_x * lat_maskW).sum(dim=['i_g','j','tile'])
-        lat_trsp_y = (tmp_y * lat_maskS).sum(dim=['i','j_g','tile'])
+        if lat_sum:
+            # Sum horizontally
+            lat_maskW, lat_maskS = vector_calc.get_latitude_masks(lat, coords['YC'], grid)
+            lat_trsp_x = (tmp_x * lat_maskW).sum(dim=['i_g','j','tile'])
+            lat_trsp_y = (tmp_y * lat_maskS).sum(dim=['i','j_g','tile'])
+        else:
+            # Interp to C-grid and stack
+            lat_maskC = scalar_calc.get_latitude_mask(lat, coords['YC'], grid)
+            lat_trsp = grid.interp_2d_vector({'X': tmp_x , 'Y': tmp_y },boundary='fill')
+            lat_trsp_x = lat_trsp['X'].where(lat_maskC,drop=True).stack({'ij':['i','j']}).dropna('ij',how='all').squeeze()
+            lat_trsp_y = lat_trsp['Y'].where(lat_maskC,drop=True).stack({'ij':['i','j']}).dropna('ij',how='all').squeeze()
 
         ds_out['trsp_z'].loc[{'lat':lat}] = lat_trsp_x + lat_trsp_y
 

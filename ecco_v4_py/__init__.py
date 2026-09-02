@@ -1,3 +1,5 @@
+from .calc_meridional_trsp_isopycnals import calc_meridional_stf_dens
+
 from .calc_meridional_trsp import calc_meridional_vol_trsp, \
         calc_meridional_heat_trsp, calc_meridional_salt_trsp, \
         meridional_trsp_at_depth
@@ -7,6 +9,8 @@ from .calc_section_trsp import calc_section_vol_trsp, \
         calc_section_fw_trsp, section_trsp_at_depth
 
 from .calc_stf import calc_meridional_stf, calc_section_stf
+
+from .ecco_access import ecco_podaac_access, ecco_podaac_to_xrdataset
 
 from .ecco_utils import make_time_bounds_and_center_times_from_ecco_dataset
 from .ecco_utils import make_time_bounds_from_ds64
@@ -72,18 +76,11 @@ from .tile_plot_proj import plot_global
 
 from ecco_v4_py import vector_calc
 
-from .ecco_access import ecco_podaac_access
-from .ecco_access import ecco_podaac_to_xrdataset
-
-__all__ = ['calc_meridional_trsp',
+__all__ = ['calc_meridional_trsp_isopycnals',
+           'calc_meridional_trsp',
            'calc_section_trsp',
            'calc_stf',
-           'ecco_acc_dates',
-           'ecco_access',
-           'ecco_download',
-           'ecco_s3_retrieve',
            'ecco_utils',
-           'ecco_varlist',
            'get_section_masks',
            'llc_array_conversion',
            'netcdf_product_generation',

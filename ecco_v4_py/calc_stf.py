@@ -12,6 +12,7 @@ from .calc_section_trsp import _parse_section_trsp_inputs, section_trsp_at_depth
 # Define constants
 METERS_CUBED_TO_SVERDRUPS = 10**-6
 
+
 def calc_meridional_stf(ds,lat_vals,doFlip=True,
                         basin_name=None,coords=None,grid=None):
     """Compute the meridional overturning streamfunction in Sverdrups

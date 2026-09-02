@@ -110,8 +110,10 @@ def calc_meridional_tracer_trsp(ds,lat_vals,itracer,
 
     coords = _parse_coords(ds,coords,['Z','YC'])
 
-    x_trac = ds[f'ADVxTr{itracer:02.0f}'] 
-    y_trac = ds[f'ADVyTr{itracer:02.0f}'] 
+   # x_trac = ds[f'ADVxTr{itracer:02.0f}'] 
+  #  y_trac = ds[f'ADVyTr{itracer:02.0f}'] 
+    x_trac = ds[f'UTRAC{itracer:02.0f}'] * coords['drF'] * coords['dyG']
+    y_trac = ds[f'VTRAC{itracer:02.0f}'] * coords['drF'] * coords['dxG']
 
     # Computes heat transport in degC * m^3/s at each depth level
     ds_out = meridional_trsp_at_depth(x_trac,y_trac,
@@ -295,25 +297,32 @@ def meridional_trsp_at_depth(xfld, yfld, lat_vals, coords, lat_sum=True,
     tmp_x = xfld.where(maskW)
     tmp_y = yfld.where(maskS)
 
+    trsp_z=[]
+
     for lat in ds_out.lat.values:
         if not less_output:
             print ('calculating transport for latitutde ', lat)
 
         # Compute mask for particular latitude band
 
+        lat_maskW, lat_maskS = vector_calc.get_latitude_masks(lat, coords['YC'], grid)
+        lat_trsp_x = (tmp_x * lat_maskW)
+        lat_trsp_y = (tmp_y * lat_maskS)
         if lat_sum:
             # Sum horizontally
-            lat_maskW, lat_maskS = vector_calc.get_latitude_masks(lat, coords['YC'], grid)
-            lat_trsp_x = (tmp_x * lat_maskW).sum(dim=['i_g','j','tile'])
-            lat_trsp_y = (tmp_y * lat_maskS).sum(dim=['i','j_g','tile'])
+            lat_trsp_x = lat_trsp_x.sum(dim=['i_g','j','tile'])
+            lat_trsp_y = lat_trsp_y.sum(dim=['i','j_g','tile'])
+            trsp_z.append( (lat_trsp_x + lat_trsp_y).assign_coords({'lat':lat}) )  
         else:
-            # Interp to C-grid and stack
-            lat_maskC = scalar_calc.get_latitude_mask(lat, coords['YC'], grid)
-            lat_trsp = grid.interp_2d_vector({'X': tmp_x , 'Y': tmp_y },boundary='fill')
-            lat_trsp_x = lat_trsp['X'].where(lat_maskC,drop=True).stack({'ij':['i','j']}).dropna('ij',how='all').squeeze()
-            lat_trsp_y = lat_trsp['Y'].where(lat_maskC,drop=True).stack({'ij':['i','j']}).dropna('ij',how='all').squeeze()
-
-        ds_out['trsp_z'].loc[{'lat':lat}] = lat_trsp_x + lat_trsp_y
+            # Zero any nans, Re-name dimensions and stack
+            lat_trsp_x=xr.where(np.isnan(lat_trsp_x),0,lat_trsp_x)
+            lat_trsp_y=xr.where(np.isnan(lat_trsp_y),0,lat_trsp_y)
+            lat_trsp = lat_trsp_x.rename({'i_g':'i'}) + lat_trsp_y.rename({'j_g':'j'})
+            trsp_c=xr.where(lat_trsp.isel(time=0,k=0)==0,np.nan,lat_trsp).assign_coords({'XC':coords.XC,'Z':coords.Z})
+            trsp_ij=trsp_c.dropna('tile',how='all').stack({'ij':['i','j']}).dropna('ij',how='all').squeeze()
+            trsp_z.append( trsp_ij.assign_coords({'lat':lat}) )  
+          
+    ds_out['trsp_z']=xr.concat(trsp_z,'lat')
 
     return ds_out
 
